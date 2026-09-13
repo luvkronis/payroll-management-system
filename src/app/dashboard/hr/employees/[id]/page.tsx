@@ -487,3 +487,9 @@ export default function EmployeeDetailPage({ params }: { params: Promise<{ id: s
     </div>
   );
 }
+// ใส่ไว้ด้านล่างสุดของไฟล์ src/app/dashboard/hr/employees/[id]/page.tsx
+export async function generateStaticParams() {
+  return [
+    { id: 'placeholder' }
+  ];
+}
