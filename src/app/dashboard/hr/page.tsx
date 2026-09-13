@@ -142,13 +142,16 @@ export default function HrDashboard() {
         throw new Error('ไม่พบพนักงานที่มีสถานะ ACTIVE สำหรับคำนวณเงินเดือน');
       }
 
-      // 2. สร้าง Payroll Period ใหม่
+const todayStr = new Date().toISOString().split('T')[0];
+
+      // 2. สร้าง Payroll Period ใหม่ พร้อมระบุ pay_date
       const { data: period, error: periodErr } = await supabase
         .from('payroll_periods')
         .insert({
           period_name: payrollPeriodName,
-          start_date: new Date().toISOString().split('T')[0],
-          end_date: new Date().toISOString().split('T')[0],
+          start_date: todayStr,
+          end_date: todayStr,
+          pay_date: todayStr, // เพิ่มฟิลด์นี้เพื่อแก้ Not-Null Constraint
         })
         .select()
         .single();
