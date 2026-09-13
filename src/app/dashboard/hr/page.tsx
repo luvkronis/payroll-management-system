@@ -129,7 +129,7 @@ export default function HrDashboard() {
     });
   }, [employees, searchQuery, selectedDeptFilter]);
 
-  // ===================== RUN PAYROLL BATCH CALCULATION =====================
+ // ===================== RUN PAYROLL BATCH CALCULATION =====================
   const handleRunPayroll = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -142,7 +142,7 @@ export default function HrDashboard() {
         throw new Error('ไม่พบพนักงานที่มีสถานะ ACTIVE สำหรับคำนวณเงินเดือน');
       }
 
-const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split('T')[0];
 
       // 2. สร้าง Payroll Period ใหม่ พร้อมระบุ pay_date
       const { data: period, error: periodErr } = await supabase
@@ -151,7 +151,7 @@ const todayStr = new Date().toISOString().split('T')[0];
           period_name: payrollPeriodName,
           start_date: todayStr,
           end_date: todayStr,
-          pay_date: todayStr, // เพิ่มฟิลด์นี้เพื่อแก้ Not-Null Constraint
+          pay_date: todayStr,
         })
         .select()
         .single();
@@ -162,7 +162,7 @@ const todayStr = new Date().toISOString().split('T')[0];
       let totalDeductions = 0;
       let totalNet = 0;
 
-      // 3. คำนวณเงินเดือนตามสูตรจริง
+      // 3. คำนวณเงินเดือนตามสูตรและ Schema จริง
       const recordsToInsert = activeEmps.map((emp) => {
         const salary = Number(emp.base_salary) || 0;
 
@@ -170,7 +170,7 @@ const todayStr = new Date().toISOString().split('T')[0];
         const ssoBase = Math.min(Math.max(salary, 1650), 15000);
         const sso = Math.round(ssoBase * 0.05);
 
-        // ภาษีหัก ณ ที่จ่ายแบบขั้นบันไดประมาณการ
+        // ภาษีหัก ณ ที่จ่ายแบบขั้นบันได
         let tax = 0;
         if (salary > 50000) {
           tax = Math.round(salary * 0.07);
@@ -178,31 +178,36 @@ const todayStr = new Date().toISOString().split('T')[0];
           tax = Math.round(salary * 0.03);
         }
 
-        const net = salary - sso - tax;
+        const totalDed = sso + tax;
+        const net = salary - totalDed;
 
         totalGross += salary;
-        totalDeductions += sso + tax;
+        totalDeductions += totalDed;
         totalNet += net;
 
         return {
           employee_id: emp.id,
+          base_salary: salary,
+          total_allowance: 0,
+          total_deduction: totalDed,
           gross_pay: salary,
+          tax_amount: tax,
+          sso_amount: sso,
           net_pay: net,
-          sso_deduction: sso,
-          tax_deduction: tax,
-          status: 'PAID',
+          is_locked: true,
         };
       });
 
-      // 4. บันทึก Payroll Batch
+      // 4. บันทึก Payroll Batch (ใช้ status: 'PAID' และใส่ batch_name)
       const { data: batch, error: batchErr } = await supabase
         .from('payroll_batches')
         .insert({
           period_id: period.id,
+          batch_name: `Payroll Batch - ${payrollPeriodName}`,
           total_gross: totalGross,
           total_deductions: totalDeductions,
           total_net: totalNet,
-          status: 'COMPLETED',
+          status: 'PAID', // ใช้ 'PAID' แทน 'COMPLETED'
         })
         .select()
         .single();
@@ -230,7 +235,7 @@ const todayStr = new Date().toISOString().split('T')[0];
       setSaving(false);
     }
   };
-
+  
   // ===================== EDIT EMPLOYEE =====================
   const openEditModal = (emp: any) => {
     setSelectedEmp(emp);
