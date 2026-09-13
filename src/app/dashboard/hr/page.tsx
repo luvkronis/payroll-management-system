@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function HrDashboard() {
@@ -133,9 +134,16 @@ export default function HrDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {employees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-slate-50">
+                  <tr key={emp.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-3 font-medium text-slate-900">{emp.employee_code}</td>
-                    <td className="p-3">{emp.first_name} {emp.last_name}</td>
+                    <td className="p-3">
+                      <Link
+                        href={`/dashboard/hr/employees/${emp.id}`}
+                        className="font-semibold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1"
+                      >
+                        {emp.first_name} {emp.last_name}
+                      </Link>
+                    </td>
                     <td className="p-3">{emp.position}</td>
                     <td className="p-3">{emp.departments?.name}</td>
                     <td className="p-3">
